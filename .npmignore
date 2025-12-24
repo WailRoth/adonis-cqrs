@@ -1,0 +1,21 @@
+# Source files
+commands/
+src/
+providers/
+stubs/
+tests/
+bin/
+*.ts
+tsconfig.json
+eslint.config.js
+.prettierignore
+prettier.config.js
+
+# Development files
+coverage/
+.npmrc
+.gitignore
+
+# Config files
+configure.ts
+index.ts
