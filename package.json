@@ -16,10 +16,20 @@
     "build/configure.js"
   ],
   "exports": {
-    ".": "./build/index.js",
-    "./types": "./build/src/types.js",
-    "./services/*": "./build/src/services/*.js"
+    ".": {
+      "types": "./build/index.d.ts",
+      "default": "./build/index.js"
+    },
+    "./types": {
+      "types": "./build/src/types.d.ts",
+      "default": "./build/src/types.js"
+    },
+    "./services/*": {
+      "types": "./build/src/services/*.d.ts",
+      "default": "./build/src/services/*.js"
+    }
   },
+  "types": "./build/index.d.ts",
   "typesVersions": {
     "*": {
       "types": [
@@ -32,7 +42,7 @@
   },
   "scripts": {
     "clean": "del-cli build",
-    "copy:templates": "copyfiles \"stubs/**/*.stub\" && del-cli \"build/**/*.ts\"",
+    "copy:templates": "copyfiles \"stubs/**/*.stub\" && del-cli \"build/**/*.ts\" \"!build/**/*.d.ts\"",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",

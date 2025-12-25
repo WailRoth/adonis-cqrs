@@ -3,6 +3,7 @@
   "compilerOptions": {
     "rootDir": "./",
     "outDir": "./build",
+    "declaration": true,
     "types": ["@types/node", "reflect-metadata"]
   }
 }

@@ -20,7 +20,7 @@ export async function configure(command: ConfigureCommand) {
   // Register the CQRS provider and commands
   try {
     await codemods.updateRcFile((rcFile) => {
-      rcFile.addProvider('@wailroth/cqrs').addCommand('@wailroth/cqrs/commands')
+      rcFile.addProvider('@wailroth/cqrs')
     })
   } catch (error) {
     command.logger.warning('Unable to update adonisrc.ts file')
