@@ -27,6 +27,10 @@
     "./services/*": {
       "types": "./build/src/services/*.d.ts",
       "default": "./build/src/services/*.js"
+    },
+    "./providers": {
+      "types": "./build/providers/cqrs_provider.d.ts",
+      "default": "./build/providers/cqrs_provider.js"
     }
   },
   "types": "./build/index.d.ts",
