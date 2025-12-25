@@ -1,127 +1,279 @@
-# AdonisJS package starter kit
+# @wailroth/cqrs
 
-> A boilerplate for creating AdonisJS packages
+[![npm version](https://badge.fury.io/js/%40wailroth%2Fcqrs.svg)](https://www.npmjs.com/package/@wailroth/cqrs)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This repo provides you with a starting point for creating AdonisJS packages. Of course, you can create a package from scratch with your folder structure and workflow. However, using this starter kit can speed up the process, as you have fewer decisions to make.
+> CQRS (Command Query Responsibility Segregation) implementation for AdonisJS
 
-## Setup
+A clean, type-safe CQRS implementation for AdonisJS with support for pipeline behaviors, automatic handler registration, and Result types for error handling.
 
-- Clone the repo on your computer, or use `giget` to download this repo without the Git history.
-  ```sh
-  npx giget@latest gh:adonisjs/pkg-starter-kit
+## Features
+
+- **Command Bus** - For write operations that modify state
+- **Query Bus** - For read operations that query data
+- **Pipeline Behaviors** - Cross-cutting concerns like logging, validation, caching, transactions
+- **Result Types** - Functional error handling with `ok()`, `err()`, `isOk()`, `isErr()`
+- **Automatic Registration** - Handlers auto-register with the bus using base classes
+- **Type-Safe** - Full TypeScript support with proper type inference
+- **AdonisJS Integration** - Seamless integration with AdonisJS IoC container
+
+## Installation
+
+```bash
+npm install @wailroth/cqrs
+```
+
+Then configure the package:
+
+```bash
+node ace configure @wailroth/cqrs
+```
+
+This will:
+- Register the CQRS provider in your `adonisrc.ts`
+- Create the recommended directory structure:
   ```
-- Install dependencies.
-- Update the `package.json` file and define the `name`, `description`, `keywords`, and `author` properties.
-- The repo is configured with an MIT license. Feel free to change that if you are not publishing under the MIT license.
+  app/
+  └── application/
+      ├── commands/
+      ├── queries/
+      └── handlers/
+  ```
 
-## Folder structure
+## Quick Start
 
-The starter kit mimics the folder structure of the official packages. Feel free to rename files and folders as per your requirements.
+### 1. Define a Command
 
-```
-├── providers
-├── src
-├── bin
-├── stubs
-├── configure.ts
-├── index.ts
-├── LICENSE.md
-├── package.json
-├── README.md
-├── tsconfig.json
-├── tsnode.esm.js
-```
+```ts
+// app/application/commands/create_user.ts
+import type { ICommand } from '@wailroth/cqrs'
 
-- The `configure.ts` file exports the `configure` hook to configure the package using the `node ace configure` command.
-- The `index.ts` file is the main entry point of the package.
-- The `tsnode.esm.js` file runs TypeScript code using TS-Node + SWC. Please read the code comment in this file to learn more.
-- The `bin` directory contains the entry point file to run Japa tests.
-- Learn more about [the `providers` directory](./providers/README.md).
-- Learn more about [the `src` directory](./src/README.md).
-- Learn more about [the `stubs` directory](./stubs/README.md).
-
-### File system naming convention
-
-We use `snake_case` naming conventions for the file system. The rule is enforced using ESLint. However, turn off the rule and use your preferred naming conventions.
-
-## Peer dependencies
-
-The starter kit has a peer dependency on `@adonisjs/core@6`. Since you are creating a package for AdonisJS, you must make it against a specific version of the framework core.
-
-If your package needs Lucid to be functional, you may install `@adonisjs/lucid` as a development dependency and add it to the list of `peerDependencies`.
-
-As a rule of thumb, packages installed in the user application should be part of the `peerDependencies` of your package and not the main dependency.
-
-For example, if you install `@adonisjs/core` as a main dependency, then essentially, you are importing a separate copy of `@adonisjs/core` and not sharing the one from the user application. Here is a great article explaining [peer dependencies](https://blog.bitsrc.io/understanding-peer-dependencies-in-javascript-dbdb4ab5a7be).
-
-## Published files
-
-Instead of publishing your repo's source code to npm, you must cherry-pick files and folders to publish only the required files.
-
-The cherry-picking uses the `files` property inside the `package.json` file. By default, we publish the following files and folders.
-
-```json
-{
-  "files": [
-    "build/src",
-    "build/providers",
-    "build/stubs",
-    "build/index.d.ts",
-    "build/index.js",
-    "build/configure.d.ts",
-    "build/configure.js"
-  ]
+export interface CreateUser extends ICommand {
+  email: string
+  name: string
+  password: string
 }
 ```
 
-If you create additional folders or files, mention them inside the `files` array.
+### 2. Create a Command Handler
 
-## Exports
+```ts
+// app/application/handlers/create_user_command_handler.ts
+import { inject } from '@adonisjs/core'
+import { CommandHandlerBase, ok } from '@wailroth/cqrs'
+import type { CreateUser } from '../commands/create_user.js'
+import type { Result } from '@wailroth/cqrs'
 
-[Node.js Subpath exports](https://nodejs.org/api/packages.html#subpath-exports) allows you to define the exports of your package regardless of the folder structure. This starter kit defines the following exports.
+@inject()
+export class CreateUserCommandHandler extends CommandHandlerBase<CreateUser> {
+  async handle(command: CreateUser): Promise<Result<void>> {
+    // Create the user in your database
+    // await User.create(command)
 
-```json
-{
-  "exports": {
-    ".": "./build/index.js",
-    "./types": "./build/src/types.js"
+    return ok()
   }
 }
 ```
 
-- The dot `.` export is the main export.
-- The `./types` exports all the types defined inside the `./build/src/types.js` file (the compiled output).
+### 3. Execute the Command
 
-Feel free to change the exports as per your requirements.
+```ts
+import { inject } from '@adonisjs/core'
+import { CommandBus } from '@wailroth/cqrs'
 
-## Testing
+@inject()
+export class UserService {
+  constructor(private commandBus: CommandBus) {}
 
-We configure the [Japa test runner](https://japa.dev/) with this starter kit. Japa is used in AdonisJS applications as well. Just run one of the following commands to execute tests.
+  async createUser(data: { email: string; name: string; password: string }) {
+    const result = await this.commandBus.execute({
+      email: data.email,
+      name: data.name,
+      password: data.password,
+    })
 
-- `npm run test`: This command will first lint the code using ESlint and then run tests and report the test coverage using [c8](https://github.com/bcoe/c8).
-- `npm run quick:test`: Runs only the tests without linting or coverage reporting.
+    if (result.isOk()) {
+      console.log('User created successfully')
+    } else {
+      console.error('Failed to create user:', result.error)
+    }
+  }
+}
+```
 
-The starter kit also has a Github workflow file to run tests using Github Actions. The tests are executed against `Node.js 20.x` and `Node.js 21.x` versions on both Linux and Windows. Feel free to edit the workflow file in the `.github/workflows` directory.
+## Queries
 
-## TypeScript workflow
+Queries work similarly but return data directly:
 
-- The starter kit uses [tsc](https://www.typescriptlang.org/docs/handbook/compiler-options.html) for compiling the TypeScript to JavaScript when publishing the package.
-- [TS-Node](https://typestrong.org/ts-node/) and [SWC](https://swc.rs/) are used to run tests without compiling the source code.
-- The `tsconfig.json` file is extended from [`@adonisjs/tsconfig`](https://github.com/adonisjs/tooling-config/tree/main/packages/typescript-config) and uses the `NodeNext` module system. Meaning the packages are written using ES modules.
-- You can perform type checking without compiling the source code using the `npm run type check` script.
+```ts
+// app/application/queries/get_user.ts
+export interface GetUser extends IQuery {
+  userId: number
+}
 
-Feel free to explore the `tsconfig.json` file for all the configured options.
+// app/application/handlers/get_user_query_handler.ts
+@inject()
+export class GetUserQueryHandler extends QueryHandlerBase<GetUser, User | null> {
+  async handle(query: GetUser): Promise<User | null> {
+    return await User.find(query.userId)
+  }
+}
 
-## ESLint and Prettier setup
+// Usage
+const user = await queryBus.execute({ userId: 1 })
+```
 
-The starter kit configures ESLint and Prettier
-using our [shared config](https://github.com/adonisjs/tooling-config/tree/main/packages).
-ESLint configuration is stored within the `eslint.config.js` file.
-Prettier configuration is stored within the `package.json` file.
-Feel free to change the configuration, use custom plugins, or remove both tools altogether.
+## Result Type
 
-## Using Stale bot
+Commands return a `Result<T>` type for error handling:
 
-The [Stale bot](https://github.com/apps/stale) is a Github application that automatically marks issues and PRs as stale and closes after a specific duration of inactivity.
+```ts
+import { ok, err, isOk, isErr } from '@wailroth/cqrs'
 
-Feel free to delete the `.github/stale.yml` and `.github/lock.yml` files if you decide not to use the Stale bot.
+// Success
+ok()                    // Result<void>
+ok(data)               // Result<T>
+
+// Error
+err(['Error message'])
+errMessage('Error message')
+
+// Checking
+if (isOk(result)) {
+  result.data // T
+}
+
+if (isErr(result)) {
+  result.error // string[]
+}
+```
+
+## Pipeline Behaviors
+
+Add cross-cutting concerns using behaviors:
+
+### Built-in Behaviors
+
+```ts
+import {
+  LoggingCommandBehavior,
+  TransactionCommandBehavior,
+  ValidationCommandBehavior,
+  CacheQueryBehavior,
+  LoggingQueryBehavior,
+} from '@wailroth/cqrs'
+```
+
+### Using Behaviors
+
+```ts
+// In a service provider or boot method
+import { CommandBus } from '@wailroth/cqrs'
+import { LoggingCommandBehavior } from '@wailroth/cqrs/services'
+
+commandBus.use(new LoggingCommandBehavior(logger))
+```
+
+### Creating Custom Behaviors
+
+```ts
+import type { CommandBehavior } from '@wailroth/cqrs'
+
+export class AuditBehavior implements CommandBehavior {
+  async handle<TCommand extends ICommand>(
+    command: TCommand,
+    next: (cmd: TCommand) => Promise<Result<any>>
+  ): Promise<Result<any>> {
+    const startTime = Date.now()
+
+    const result = await next(command)
+
+    const duration = Date.now() - startTime
+    await AuditLog.create({
+      command: command.constructor.name,
+      duration,
+      success: result.isOk(),
+    })
+
+    return result
+  }
+}
+```
+
+## Advanced Usage
+
+### Manual Handler Registration
+
+If you don't want to use the base classes:
+
+```ts
+import { CommandBus } from '@wailroth/cqrs'
+import type { ICommandHandler } from '@wailroth/cqrs'
+
+@inject()
+export class MyHandler implements ICommandHandler<MyCommand> {
+  async handle(command: MyCommand): Promise<Result<void>> {
+    // ...
+  }
+}
+
+// In a provider
+commandBus.register('MyCommand', new MyHandler())
+```
+
+### Validation with Behaviors
+
+```ts
+import { ValidationCommandBehavior } from '@wailroth/cqrs'
+import vine from '@vinejs/vine'
+
+const schema = vine.object({
+  email: vine.string().email(),
+  name: vine.string().minLength(3),
+})
+
+commandBus.use(
+  new ValidationCommandBehavior(async (command) => {
+    return vine.validate({ schema, data: command })
+  })
+)
+```
+
+### Transaction Support
+
+Requires `@adonisjs/lucid`:
+
+```ts
+import { TransactionCommandBehavior } from '@wailroth/cqrs'
+import Database from '@adonisjs/lucid/database'
+
+commandBus.use(new TransactionCommandBehavior(Database))
+```
+
+## Directory Structure
+
+The recommended structure (created automatically by configure):
+
+```
+app/
+└── application/
+    ├── commands/      # ICommand definitions
+    ├── queries/       # IQuery definitions
+    └── handlers/      # Handler implementations
+```
+
+## Naming Conventions
+
+- Commands: `{Action}{Entity}Command` (e.g., `CreateUserCommand`)
+- Queries: `{Action}{Entity}Query` (e.g., `GetUserQuery`)
+- Handlers: `{CommandOrQueryName}Handler` (e.g., `CreateUserCommandHandler`)
+
+The base classes automatically extract the command/query name from the handler class name for registration.
+
+## License
+
+MIT
+
+## Support
+
+For issues and questions, please use the [GitHub issue tracker](https://github.com/wailroth/cqrs-adonisjs/issues).

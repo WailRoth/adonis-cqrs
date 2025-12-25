@@ -46,9 +46,25 @@
     "version": "npm run build",
     "prepublishOnly": "npm run build"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "adonisjs",
+    "cqrs",
+    "command-query-responsibility-segregation",
+    "command-bus",
+    "query-bus",
+    "domain-driven-design",
+    "ddd"
+  ],
+  "author": "wailroth",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WailRoth/adonis-cqrs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/WailRoth/adonis-cqrs/issues"
+  },
+  "homepage": "https://github.com/WailRoth/adonis-cqrs#readme",
   "devDependencies": {
     "@adonisjs/assembler": "^7.8.2",
     "@adonisjs/core": "^6.12.0",
